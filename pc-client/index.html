@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>IT服务大厅</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f0f2f5;
+      color: #333;
+    }
+    #app {
+      display: flex;
+      height: 100vh;
+    }
+    .sidebar {
+      width: 200px;
+      background: #001529;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+    }
+    .logo {
+      padding: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      text-align: center;
+      border-bottom: 1px solid #002140;
+    }
+    .nav-item {
+      padding: 15px 20px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .nav-item:hover, .nav-item.active {
+      background: #1890ff;
+    }
+    .main-content {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      background: #fff;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    .work-order-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .work-order-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .work-order-item:last-child {
+      border-bottom: none;
+    }
+    .item-left {
+      display: flex;
+      flex-direction: column;
+    }
+    .item-title {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 5px;
+    }
+    .item-desc {
+      font-size: 14px;
+      color: #666;
+    }
+    .item-right {
+      text-align: right;
+    }
+    .status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+    .status.pending { background: #fff0f0; color: #ff4d4f; }
+    .status.processing { background: #e6f7ff; color: #1890ff; }
+    .status.resolved { background: #f6ffed; color: #52c41a; }
+    
+    .btn {
+      padding: 8px 16px;
+      background: #1890ff;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn:hover { background: #40a9ff; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="sidebar">
+      <div class="logo">IT服务大厅</div>
+      <div class="nav-item active">工单管理</div>
+      <div class="nav-item">资产管理</div>
+      <div class="nav-item">知识库</div>
+    </div>
+    
+    <div class="main-content">
+      <div class="header">
+        <h2>工单管理</h2>
+        <button class="btn" @click="simulateNewOrder">模拟新工单</button>
+      </div>
+
+      <div class="card">
+        <ul class="work-order-list">
+          <li class="work-order-item" v-for="order in workOrders" :key="order.id">
+            <div class="item-left">
+              <span class="item-title">{{ order.title }}</span>
+              <span class="item-desc">{{ order.description }}</span>
+            </div>
+            <div class="item-right">
+              <span class="status" :class="order.status">{{ getStatusText(order.status) }}</span>
+              <div style="font-size: 12px; color: #999;">{{ order.time }}</div>
+            </div>
+          </li>
+          <li v-if="workOrders.length === 0" style="text-align: center; color: #999; padding: 20px;">
+            暂无工单
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="./renderer.js"></script>
+</body>
+</html>
