@@ -15,4 +15,37 @@ public class WorkOrderTransferDTO {
     private Long operatorId;
     
     private String remark;
+
+    public Long getWorkOrderId() {
+        return this.workOrderId;
+    }
+
+    public void setWorkOrderId(Long workOrderId) {
+        this.workOrderId = workOrderId;
+    }
+
+    public Long getTargetAssigneeId() {
+        return this.targetAssigneeId;
+    }
+
+    public void setTargetAssigneeId(Long targetAssigneeId) {
+        this.targetAssigneeId = targetAssigneeId;
+    }
+
+    public Long getOperatorId() {
+        return this.operatorId;
+    }
+
+    public void setOperatorId(Long operatorId) {
+        this.operatorId = operatorId;
+    }
+
+    public String getRemark() {
+        return this.remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark;
+    }
+
 }

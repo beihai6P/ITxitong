@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Constants;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
-import com.company.itoms.common.DataScope;
 import com.company.itoms.entity.AssetEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -14,19 +13,15 @@ import java.util.List;
 @Mapper
 public interface AssetMapper extends BaseMapper<AssetEntity> {
 
-    @DataScope
     @Override
     List<AssetEntity> selectList(@Param(Constants.WRAPPER) Wrapper<AssetEntity> queryWrapper);
 
-    @DataScope
     @Override
     <E extends IPage<AssetEntity>> E selectPage(E page, @Param(Constants.WRAPPER) Wrapper<AssetEntity> queryWrapper);
 
-    @DataScope
     @Override
     AssetEntity selectOne(@Param(Constants.WRAPPER) Wrapper<AssetEntity> queryWrapper);
 
-    @DataScope
     @Override
     AssetEntity selectById(Serializable id);
     @org.apache.ibatis.annotations.Select("SELECT * FROM asset WHERE is_deleted = 1")

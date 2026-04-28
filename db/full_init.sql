@@ -1,28 +1,8 @@
 -- IT运维综合管理系统 数据库初始化脚本
-CREATE DATABASE IF NOT EXISTS itoms DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE itoms;
 
--- 1. 用户表
-CREATE TABLE `user` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
-    `username` VARCHAR(50) NOT NULL COMMENT '用户名/登录名',
-    `password` VARCHAR(255) NOT NULL COMMENT '密码(BCrypt加密)',
-    `real_name` VARCHAR(50) DEFAULT NULL COMMENT '真实姓名',
-    `phone` VARCHAR(20) DEFAULT NULL COMMENT '手机号',
-    `email` VARCHAR(100) DEFAULT NULL COMMENT '邮箱',
-    `department_id` BIGINT COMMENT '所属部门ID',
-    `role` VARCHAR(50) NOT NULL COMMENT '角色(USER, REPAIRMAN, ADMIN, SUPER_ADMIN)',
-    `status` TINYINT DEFAULT 1 COMMENT '状态(0-禁用, 1-启用)',
-    `last_login_time` DATETIME DEFAULT NULL COMMENT '最后登录时间',
-    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `is_deleted` TINYINT DEFAULT 0 COMMENT '逻辑删除标志(0-未删除, 1-已删除)',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_username` (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
-
--- 2. 部门表
-CREATE TABLE `department` (
+-- 1. 部门表
+CREATE TABLE IF NOT EXISTS `department` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
     `name` VARCHAR(100) NOT NULL COMMENT '部门名称',
     `parent_id` BIGINT DEFAULT 0 COMMENT '父级部门ID',
@@ -33,8 +13,8 @@ CREATE TABLE `department` (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='部门表';
 
--- 3. 资产表
-CREATE TABLE `asset` (
+-- 2. 资产表
+CREATE TABLE IF NOT EXISTS `asset` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
     `asset_code` VARCHAR(50) NOT NULL COMMENT '资产编号(系统自动生成)',
     `asset_name` VARCHAR(100) NOT NULL COMMENT '资产名称',
@@ -56,8 +36,8 @@ CREATE TABLE `asset` (
     INDEX `idx_status_location` (`status`, `location`(100))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='IT资产表';
 
--- 4. 工单表
-CREATE TABLE `work_order` (
+-- 3. 工单表
+CREATE TABLE IF NOT EXISTS `work_order` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
     `work_order_code` VARCHAR(50) NOT NULL COMMENT '工单编号',
     `fault_type` VARCHAR(50) NOT NULL COMMENT '故障类型',
@@ -81,8 +61,8 @@ CREATE TABLE `work_order` (
     INDEX `idx_assignee_status` (`assignee_id`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='故障报修工单表';
 
--- 5. 工单流转日志表
-CREATE TABLE `work_order_flow_log` (
+-- 4. 工单流转日志表
+CREATE TABLE IF NOT EXISTS `work_order_flow_log` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
     `work_order_id` BIGINT NOT NULL COMMENT '工单ID',
     `operator_id` BIGINT NOT NULL COMMENT '操作人ID',
@@ -95,8 +75,8 @@ CREATE TABLE `work_order_flow_log` (
     INDEX `idx_work_order_id` (`work_order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='工单流转日志表';
 
--- 6. 问题库/故障知识库表
-CREATE TABLE `knowledge_base` (
+-- 5. 问题库/故障知识库表
+CREATE TABLE IF NOT EXISTS `knowledge_base` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
     `fault_type` VARCHAR(50) NOT NULL COMMENT '故障类型',
     `symptom` TEXT NOT NULL COMMENT '故障现象',
@@ -110,8 +90,8 @@ CREATE TABLE `knowledge_base` (
     FULLTEXT KEY `ft_symptom_solution` (`symptom`, `solution`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='知识库表';
 
--- 7. AI推荐日志表
-CREATE TABLE `ai_recommendation_log` (
+-- 6. AI推荐日志表
+CREATE TABLE IF NOT EXISTS `ai_recommendation_log` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
     `work_order_id` BIGINT DEFAULT NULL COMMENT '工单ID(如有)',
     `description_input` TEXT COMMENT '输入描述',
@@ -122,8 +102,8 @@ CREATE TABLE `ai_recommendation_log` (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI推荐日志表';
 
--- 8. AI接口配置表
-CREATE TABLE `ai_api_config` (
+-- 7. AI接口配置表
+CREATE TABLE IF NOT EXISTS `ai_api_config` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
     `provider_name` VARCHAR(50) NOT NULL COMMENT 'AI服务提供商(如 Baidu, DeepSeek 等)',
     `api_key` VARCHAR(255) NOT NULL COMMENT 'API Key',
@@ -137,13 +117,8 @@ CREATE TABLE `ai_api_config` (
     UNIQUE KEY `uk_provider` (`provider_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI接口配置表';
 
--- 插入默认超管账号: admin / admin123
-INSERT INTO `user` (`username`, `password`, `real_name`, `role`, `status`) 
-VALUES ('admin', '$2a$10$7Q1/1R4a/LhW0I5h/yZqB.Z3FwV8GZt1iR1B2Z3FwV8GZt1iR1B2Z', '超级管理员', 'SUPER_ADMIN', 1);
-
-
 -- 8. 消息表
-CREATE TABLE `sys_message` (
+CREATE TABLE IF NOT EXISTS `sys_message` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
     `receiver_id` BIGINT NOT NULL,
     `title` VARCHAR(100) NOT NULL,
@@ -156,7 +131,7 @@ CREATE TABLE `sys_message` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统消息表';
 
 -- 9. 字典表
-CREATE TABLE `sys_dict` (
+CREATE TABLE IF NOT EXISTS `sys_dict` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
     `dict_code` VARCHAR(50) NOT NULL,
     `dict_name` VARCHAR(50) NOT NULL,
@@ -167,7 +142,7 @@ CREATE TABLE `sys_dict` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统字典表';
 
 -- 10. 参数配置表
-CREATE TABLE `sys_config` (
+CREATE TABLE IF NOT EXISTS `sys_config` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
     `config_key` VARCHAR(50) NOT NULL,
     `config_value` VARCHAR(255) NOT NULL,
@@ -176,5 +151,50 @@ CREATE TABLE `sys_config` (
     UNIQUE KEY `uk_config_key` (`config_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统参数表';
 
--- 更新用户表增加 open_id
-ALTER TABLE `user` ADD COLUMN `open_id` VARCHAR(100) DEFAULT NULL COMMENT '微信OpenID';
+-- 11. 菜单表
+CREATE TABLE IF NOT EXISTS `menu` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(50) NOT NULL,
+    `path` VARCHAR(100) NOT NULL,
+    `component` VARCHAR(255),
+    `icon` VARCHAR(50),
+    `parent_id` BIGINT DEFAULT 0,
+    `sort_order` INT DEFAULT 0,
+    `is_active` TINYINT DEFAULT 1,
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='菜单表';
+
+-- 12. 角色表
+CREATE TABLE IF NOT EXISTS `role` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `role_name` VARCHAR(50) NOT NULL,
+    `role_code` VARCHAR(50) NOT NULL,
+    `description` VARCHAR(255),
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_role_code` (`role_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色表';
+
+-- 13. 操作日志表
+CREATE TABLE IF NOT EXISTS `operation_log` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `operator_id` BIGINT NOT NULL,
+    `operator_name` VARCHAR(50) NOT NULL,
+    `module` VARCHAR(50) NOT NULL,
+    `type` VARCHAR(50) NOT NULL,
+    `description` VARCHAR(255) NOT NULL,
+    `request_method` VARCHAR(20),
+    `request_url` VARCHAR(255),
+    `request_ip` VARCHAR(50),
+    `request_params` TEXT,
+    `response_data` TEXT,
+    `error_msg` TEXT,
+    `status` TINYINT DEFAULT 0,
+    `execute_time` BIGINT DEFAULT 0,
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_operator_module` (`operator_id`, `module`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志表';

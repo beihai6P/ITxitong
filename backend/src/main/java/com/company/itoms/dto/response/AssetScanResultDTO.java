@@ -10,4 +10,21 @@ import java.util.List;
 public class AssetScanResultDTO {
     private AssetEntity asset;
     private List<AssetLifecycleLogEntity> recentHistory;
+
+    public AssetEntity getAsset() {
+        return this.asset;
+    }
+
+    public void setAsset(AssetEntity asset) {
+        this.asset = asset;
+    }
+
+    public List<AssetLifecycleLogEntity> getRecentHistory() {
+        return this.recentHistory;
+    }
+
+    public void setRecentHistory(List<AssetLifecycleLogEntity> recentHistory) {
+        this.recentHistory = recentHistory;
+    }
+
 }

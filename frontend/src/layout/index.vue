@@ -20,37 +20,41 @@
         </el-menu-item>
         <el-menu-item index="/work-order">
           <el-icon><Document /></el-icon>
-          <span>工单报修</span>
+          <span>工单管理</span>
         </el-menu-item>
         <el-sub-menu index="/system">
           <template #title>
             <el-icon><Setting /></el-icon>
             <span>系统管理</span>
           </template>
-          <el-menu-item index="/role">
+          <el-menu-item index="/system/role">
             <el-icon><User /></el-icon>
             <span>角色管理</span>
           </el-menu-item>
-          <el-menu-item index="/menu">
-            <el-icon><MenuIcon /></el-icon>
+          <el-menu-item index="/system/menu">
+            <el-icon><Menu /></el-icon>
             <span>菜单管理</span>
           </el-menu-item>
-          <el-menu-item index="/sys-dict">
+          <el-menu-item index="/system/user">
+            <el-icon><UserFilled /></el-icon>
+            <span>用户管理</span>
+          </el-menu-item>
+          <el-menu-item index="/system/dict">
             <el-icon><Reading /></el-icon>
             <span>字典管理</span>
           </el-menu-item>
-          <el-menu-item index="/sys-config">
+          <el-menu-item index="/system/config">
             <el-icon><Operation /></el-icon>
             <span>参数配置</span>
           </el-menu-item>
-          <el-menu-item index="/log">
+          <el-menu-item index="/system/log">
             <el-icon><Tickets /></el-icon>
             <span>日志管理</span>
           </el-menu-item>
         </el-sub-menu>
       </el-menu>
     </el-aside>
-    
+
     <el-container>
       <el-header class="header">
         <GlobalSearch />
@@ -62,7 +66,7 @@
           </div>
           <el-dropdown>
             <span class="el-dropdown-link">
-              Admin <el-icon class="el-icon--right"><arrow-down /></el-icon>
+              {{ currentUsername }} <el-icon class="el-icon--right"><ArrowDown /></el-icon>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
@@ -72,7 +76,7 @@
           </el-dropdown>
         </div>
       </el-header>
-      
+
       <el-main class="main">
         <router-view v-slot="{ Component }">
           <transition name="fade-transform" mode="out-in">
@@ -81,7 +85,7 @@
         </router-view>
       </el-main>
     </el-container>
-    
+
     <MessageDrawer v-model="drawerVisible" @read-success="fetchUnreadCount" />
   </el-container>
 </template>
@@ -89,8 +93,11 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Odometer, Monitor, Document, ArrowDown, Setting, User, Menu as MenuIcon, Tickets, Bell, Reading, Operation } from '@element-plus/icons-vue'
 import { ElNotification } from 'element-plus'
+import {
+  Odometer, Monitor, Document, ArrowDown, Setting, User, Menu as MenuIcon,
+  Tickets, Bell, Reading, Operation, UserFilled
+} from '@element-plus/icons-vue'
 import GlobalSearch from './components/GlobalSearch.vue'
 import MessageDrawer from './components/MessageDrawer.vue'
 import { getUnreadCount } from '@/api/sysMessage'
@@ -101,6 +108,21 @@ const ws = ref<WebSocket | null>(null)
 
 const unreadCount = ref(0)
 const drawerVisible = ref(false)
+const currentUsername = ref('Admin')
+
+onMounted(() => {
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  currentUsername.value = user.username || 'Admin'
+
+  initWebSocket()
+  fetchUnreadCount()
+})
+
+onUnmounted(() => {
+  if (ws.value) {
+    ws.value.close()
+  }
+})
 
 const fetchUnreadCount = async () => {
   try {
@@ -118,16 +140,15 @@ const openMessageDrawer = () => {
 const initWebSocket = () => {
   const token = localStorage.getItem('token') || ''
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  // Assuming standard API URL, adjust if needed
   const wsUrl = `${protocol}//${window.location.host}/api/ws?token=${token}`
-  
+
   try {
     ws.value = new WebSocket(wsUrl)
-    
+
     ws.value.onopen = () => {
       console.log('WebSocket connection established')
     }
-    
+
     ws.value.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)
@@ -146,14 +167,13 @@ const initWebSocket = () => {
         })
       }
     }
-    
+
     ws.value.onerror = (error) => {
       console.error('WebSocket error:', error)
     }
-    
+
     ws.value.onclose = () => {
       console.log('WebSocket connection closed')
-      // Optional: implement reconnect logic
       setTimeout(initWebSocket, 5000)
     }
   } catch (error) {
@@ -161,19 +181,10 @@ const initWebSocket = () => {
   }
 }
 
-onMounted(() => {
-  initWebSocket()
-  fetchUnreadCount()
-})
-
-onUnmounted(() => {
-  if (ws.value) {
-    ws.value.close()
-  }
-})
-
 const handleLogout = () => {
   localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  localStorage.removeItem('permissions')
   router.push('/login')
 }
 </script>
@@ -226,6 +237,7 @@ const handleLogout = () => {
   display: flex;
   align-items: center;
 }
+
 .message-icon:hover {
   color: #409EFF;
 }
@@ -242,7 +254,6 @@ const handleLogout = () => {
   overflow-y: auto;
 }
 
-/* fade-transform */
 .fade-transform-leave-active,
 .fade-transform-enter-active {
   transition: all .3s;

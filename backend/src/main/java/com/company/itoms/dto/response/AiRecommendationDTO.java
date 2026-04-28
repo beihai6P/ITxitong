@@ -12,4 +12,45 @@ public class AiRecommendationDTO {
 
     @JsonIgnore
     private String rawAiResponse;
+
+    public Long getSolutionId() {
+        return this.solutionId;
+    }
+
+    public void setSolutionId(Long solutionId) {
+        this.solutionId = solutionId;
+    }
+
+    public Double getConfidence() {
+        return this.confidence;
+    }
+
+    public void setConfidence(Double confidence) {
+        this.confidence = confidence;
+    }
+
+    public String getSource() {
+        return this.source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public String getContent() {
+        return this.content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public String getRawAiResponse() {
+        return this.rawAiResponse;
+    }
+
+    public void setRawAiResponse(String rawAiResponse) {
+        this.rawAiResponse = rawAiResponse;
+    }
+
 }

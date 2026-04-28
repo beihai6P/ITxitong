@@ -47,4 +47,7 @@ public class DepartmentController {
     public Result<Boolean> delete(@PathVariable Long id) {
         return Result.success(departmentService.removeById(id));
     }
+
+
+
 }

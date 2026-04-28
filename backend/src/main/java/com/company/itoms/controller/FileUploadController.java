@@ -24,7 +24,7 @@ public class FileUploadController {
     @PostMapping("/upload")
     public Result<String> upload(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
-            return Result.error("文件不能为空");
+            return Result.error(400, "文件不能为空");
         }
 
         try {
@@ -48,7 +48,8 @@ public class FileUploadController {
             return Result.success(fileUrl);
         } catch (IOException e) {
             log.error("文件上传失败", e);
-            return Result.error("文件上传失败");
+            return Result.error(500, "文件上传失败");
         }
     }
+
 }

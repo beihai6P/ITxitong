@@ -3,9 +3,11 @@ package com.company.itoms.service.impl;
 import com.company.itoms.dto.request.LoginRequest;
 import com.company.itoms.dto.request.WxLoginRequest;
 import com.company.itoms.dto.response.LoginResponse;
-import com.company.itoms.service.AuthService;
-import com.company.itoms.service.UserService;
 import com.company.itoms.entity.UserEntity;
+import com.company.itoms.service.AuthService;
+import com.company.itoms.service.MenuService;
+import com.company.itoms.service.UserRoleService;
+import com.company.itoms.service.UserService;
 import com.company.itoms.util.JwtUtil;
 import com.company.itoms.exception.BusinessException;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -14,14 +16,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetailsService;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import okhttp3.*;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
@@ -36,13 +41,15 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtil jwtUtil;
     private final UserService userService;
     private final UserDetailsService userDetailsService;
-    
+    private final MenuService menuService;
+    private final UserRoleService userRoleService;
+
     @Value("${wx.appId:dummy_appid}")
     private String wxAppId;
-    
+
     @Value("${wx.appSecret:dummy_secret}")
     private String wxAppSecret;
-    
+
     private final OkHttpClient httpClient = new OkHttpClient.Builder()
             .connectTimeout(5, TimeUnit.SECONDS)
             .readTimeout(5, TimeUnit.SECONDS)
@@ -56,11 +63,20 @@ public class AuthServiceImpl implements AuthService {
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         Map<String, Object> claims = new HashMap<>();
-        String role = userDetails.getAuthorities().stream()
+
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+
+        String role = roles.stream()
                 .findFirst()
-                .map(grantedAuthority -> grantedAuthority.getAuthority())
                 .orElse("ROLE_USER");
         claims.put("role", role);
+
+        UserEntity user = userService.getOne(new LambdaQueryWrapper<UserEntity>()
+                .eq(UserEntity::getUsername, userDetails.getUsername()));
+
+        List<String> permissions = menuService.getPermissionsByUserId(user.getId());
 
         String token = jwtUtil.generateToken(userDetails.getUsername(), claims);
 
@@ -68,6 +84,9 @@ public class AuthServiceImpl implements AuthService {
                 .token(token)
                 .username(userDetails.getUsername())
                 .role(role)
+                .userId(user.getId())
+                .roles(roles)
+                .permissions(permissions)
                 .build();
     }
 
@@ -100,20 +119,16 @@ public class AuthServiceImpl implements AuthService {
         UserEntity user = userService.getOne(new LambdaQueryWrapper<UserEntity>().eq(UserEntity::getOpenId, openId).last("LIMIT 1"));
 
         if (user != null) {
-            // Already bound, generate token
             return generateLoginResponse(user.getUsername());
         } else {
-            // Not bound, need to bind with provided username and password
             if (request.getUsername() == null || request.getPassword() == null) {
                 throw new BusinessException(401, "该微信号未绑定账号，请提供用户名和密码进行绑定");
             }
-            
-            // Authenticate first
+
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
-            
-            // Update user with openId
+
             UserEntity existingUser = userService.getOne(new LambdaQueryWrapper<UserEntity>().eq(UserEntity::getUsername, request.getUsername()));
             if (existingUser != null) {
                 existingUser.setOpenId(openId);
@@ -124,22 +139,34 @@ public class AuthServiceImpl implements AuthService {
             }
         }
     }
-    
+
     private LoginResponse generateLoginResponse(String username) {
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         Map<String, Object> claims = new HashMap<>();
-        String role = userDetails.getAuthorities().stream()
+
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+
+        String role = roles.stream()
                 .findFirst()
-                .map(grantedAuthority -> grantedAuthority.getAuthority())
                 .orElse("ROLE_USER");
         claims.put("role", role);
 
-        String token = jwtUtil.generateToken(userDetails.getUsername(), claims);
+        UserEntity user = userService.getOne(new LambdaQueryWrapper<UserEntity>()
+                .eq(UserEntity::getUsername, username));
+
+        List<String> permissions = menuService.getPermissionsByUserId(user.getId());
+
+        String token = jwtUtil.generateToken(username, claims);
 
         return LoginResponse.builder()
                 .token(token)
-                .username(userDetails.getUsername())
+                .username(username)
                 .role(role)
+                .userId(user.getId())
+                .roles(roles)
+                .permissions(permissions)
                 .build();
     }
 }

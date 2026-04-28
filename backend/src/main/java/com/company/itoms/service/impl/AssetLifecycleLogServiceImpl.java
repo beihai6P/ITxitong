@@ -9,26 +9,37 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class AssetLifecycleLogServiceImpl extends ServiceImpl<AssetLifecycleLogMapper, AssetLifecycleLogEntity> implements AssetLifecycleLogService {
 
     @Override
-    public void recordLog(Long assetId, String action, Long operatorId, String remark) {
-        AssetLifecycleLogEntity log = new AssetLifecycleLogEntity();
-        log.setAssetId(assetId);
-        log.setAction(action);
-        log.setOperatorId(operatorId);
-        log.setRemark(remark);
-        log.setCreateTime(LocalDateTime.now());
-        this.save(log);
+    public void recordLog(Long assetId, String operateType, Long operatorId, String operatorName, String detail) {
+        AssetLifecycleLogEntity lifecycleLog = new AssetLifecycleLogEntity();
+        lifecycleLog.setAssetId(assetId);
+        lifecycleLog.setOperateType(operateType);
+        lifecycleLog.setOperatorId(operatorId);
+        lifecycleLog.setOperatorName(operatorName);
+        lifecycleLog.setOperateTime(LocalDateTime.now());
+        lifecycleLog.setDetail(detail);
+        this.save(lifecycleLog);
     }
 
     @Override
     public List<AssetLifecycleLogEntity> getLogsByAssetId(Long assetId) {
         LambdaQueryWrapper<AssetLifecycleLogEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(AssetLifecycleLogEntity::getAssetId, assetId)
-                    .orderByDesc(AssetLifecycleLogEntity::getCreateTime);
+                    .orderByDesc(AssetLifecycleLogEntity::getOperateTime);
+        return this.list(queryWrapper);
+    }
+
+    @Override
+    public List<AssetLifecycleLogEntity> getLogsByOperateType(String operateType) {
+        LambdaQueryWrapper<AssetLifecycleLogEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(AssetLifecycleLogEntity::getOperateType, operateType)
+                    .orderByDesc(AssetLifecycleLogEntity::getOperateTime);
         return this.list(queryWrapper);
     }
 }

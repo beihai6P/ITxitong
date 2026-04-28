@@ -3,7 +3,9 @@ package com.company.itoms.controller;
 import com.company.itoms.common.Result;
 import com.company.itoms.dto.response.AssetScanResultDTO;
 import com.company.itoms.entity.AssetEntity;
+import com.company.itoms.entity.AssetLifecycleLogEntity;
 import com.company.itoms.service.AssetService;
+import com.company.itoms.service.AssetLifecycleLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -12,12 +14,16 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/asset")
-public class AssetController {
-
+public class AssetApiController {
     @Autowired
     private AssetService assetService;
+
+    @Autowired
+    private AssetLifecycleLogService assetLifecycleLogService;
 
     @GetMapping("/scan/resolve")
     public Result<AssetScanResultDTO> scanAndResolve(@RequestParam("assetCode") String assetCode,
@@ -58,5 +64,10 @@ public class AssetController {
     @GetMapping("/inventory-check")
     public Result<String> checkInventory(@RequestParam("assetCode") String assetCode) {
         return Result.success(assetService.checkInventory(assetCode));
+    }
+
+    @GetMapping("/{id}/logs")
+    public Result<List<AssetLifecycleLogEntity>> getAssetLogs(@PathVariable Long id) {
+        return Result.success(assetLifecycleLogService.getLogsByAssetId(id));
     }
 }

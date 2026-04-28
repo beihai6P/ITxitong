@@ -38,4 +38,9 @@ public class SysMessageController {
     public Result<Boolean> delete(@PathVariable Long id) {
         return Result.success(sysMessageService.removeById(id));
     }
+
+    @GetMapping("/unread-count")
+    public Result<Long> getUnreadCount() {
+        return Result.success(0L);
+    }
 }

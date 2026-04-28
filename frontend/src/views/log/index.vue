@@ -49,25 +49,40 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import request from '@/utils/request'
 
 const loading = ref(false)
 const searchQuery = ref('')
-const tableData = ref([
-  { module: '用户管理', type: 'INSERT', description: '新增用户: test_user', operator: 'admin', ip: '192.168.1.100', status: 1, createTime: '2023-10-01 10:20:30' },
-  { module: '角色管理', type: 'UPDATE', description: '修改角色权限', operator: 'admin', ip: '192.168.1.100', status: 1, createTime: '2023-10-01 11:20:30' },
-  { module: '菜单管理', type: 'DELETE', description: '删除菜单: 测试菜单', operator: 'admin', ip: '192.168.1.100', status: 0, createTime: '2023-10-02 09:10:00' },
-])
+const tableData = ref<any[]>([])
 const currentPage = ref(1)
 const pageSize = ref(10)
-const total = ref(3)
+const total = ref(0)
+
+const fetchList = async () => {
+  loading.value = true
+  try {
+    const res = await request.get('/api/v1/logs', {
+      params: {
+        page: currentPage.value,
+        pageSize: pageSize.value,
+        operator: searchQuery.value
+      }
+    })
+    tableData.value = res.data?.records || res.records || res.data || []
+    total.value = res.data?.total || res.total || 0
+  } catch (error) {
+    console.error('Fetch logs error:', error)
+    ElMessage.error('获取日志列表失败：' + (error instanceof Error ? error.message : '未知错误'))
+  } finally {
+    loading.value = false
+  }
+}
 
 const handleSearch = () => {
-  // 模拟搜索
-  loading.value = true
-  setTimeout(() => {
-    loading.value = false
-  }, 500)
+  currentPage.value = 1
+  fetchList()
 }
 
 const handleReset = () => {
@@ -77,11 +92,17 @@ const handleReset = () => {
 
 const handleSizeChange = (val: number) => {
   pageSize.value = val
+  fetchList()
 }
 
 const handleCurrentChange = (val: number) => {
   currentPage.value = val
+  fetchList()
 }
+
+onMounted(() => {
+  fetchList()
+})
 </script>
 
 <style scoped>

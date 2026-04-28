@@ -80,38 +80,44 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import request from '@/utils/request'
 
 const loading = ref(false)
-const tableData = ref([
-  {
-    id: 1,
-    name: '监控大屏',
-    icon: 'Odometer',
-    path: '/dashboard',
-    component: 'views/dashboard/index',
-    sort: 1,
-    status: 1
-  },
-  {
-    id: 2,
-    name: '系统管理',
-    icon: 'Setting',
-    path: '/system',
-    component: 'Layout',
-    sort: 2,
-    status: 1,
-    children: [
-      { id: 21, name: '角色管理', icon: 'User', path: '/system/role', component: 'views/role/index', sort: 1, status: 1 },
-      { id: 22, name: '菜单管理', icon: 'MenuIcon', path: '/system/menu', component: 'views/menu/index', sort: 2, status: 1 },
-      { id: 23, name: '日志管理', icon: 'Tickets', path: '/system/log', component: 'views/log/index', sort: 3, status: 1 }
-    ]
-  }
-])
+const tableData = ref<any[]>([])
+const menuOptions = ref<any[]>([])
 
-const menuOptions = ref([{ id: 0, label: '顶级菜单', children: tableData.value.map(item => ({ id: item.id, label: item.name })) }])
+const fetchList = async () => {
+  loading.value = true
+  try {
+    const res = await request.get('/api/v1/menus')
+    tableData.value = res.data?.list || res.list || res.data || []
+    updateMenuOptions()
+  } catch (error) {
+    console.error('Fetch menus error:', error)
+    ElMessage.error('获取菜单列表失败：' + (error instanceof Error ? error.message : '未知错误'))
+  } finally {
+    loading.value = false
+  }
+}
+
+const updateMenuOptions = () => {
+  const options = tableData.value.map(item => ({
+    id: item.id,
+    label: item.name,
+    children: item.children?.map((child: any) => ({
+      id: child.id,
+      label: child.name
+    }))
+  }))
+  menuOptions.value = [{ id: 0, label: '顶级菜单', children: options }]
+}
+
+onMounted(() => {
+  fetchList()
+})
 
 const dialogVisible = ref(false)
 const dialogType = ref<'add' | 'edit'>('add')
@@ -144,22 +150,41 @@ const handleEdit = (row: any) => {
   dialogVisible.value = true
 }
 
-const handleDelete = (_row: any) => {
+const handleDelete = (row: any) => {
   ElMessageBox.confirm('确定要删除该菜单吗?', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
-  }).then(() => {
-    ElMessage.success('删除成功')
+  }).then(async () => {
+    try {
+      await request.delete(`/api/v1/menus/${row.id}`)
+      ElMessage.success('删除成功')
+      fetchList()
+    } catch (error) {
+      console.error('Delete menu error:', error)
+      ElMessage.error('删除菜单失败：' + (error instanceof Error ? error.message : '未知错误'))
+    }
   }).catch(() => {})
 }
 
 const handleSubmit = async () => {
   if (!formRef.value) return
-  await formRef.value.validate((valid) => {
+  await formRef.value.validate(async (valid) => {
     if (valid) {
-      ElMessage.success(dialogType.value === 'add' ? '新增成功' : '编辑成功')
-      dialogVisible.value = false
+      try {
+        if (dialogType.value === 'add') {
+          await request.post('/api/v1/menus', form)
+          ElMessage.success('新增成功')
+        } else {
+          await request.put(`/api/v1/menus/${form.id}`, form)
+          ElMessage.success('编辑成功')
+        }
+        dialogVisible.value = false
+        fetchList()
+      } catch (error) {
+        console.error('Submit menu error:', error)
+        ElMessage.error('操作失败：' + (error instanceof Error ? error.message : '未知错误'))
+      }
     }
   })
 }

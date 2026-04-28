@@ -8,18 +8,18 @@
       </template>
       <el-form :model="loginForm" :rules="rules" ref="loginFormRef" @keyup.enter="handleLogin">
         <el-form-item prop="username">
-          <el-input 
-            v-model="loginForm.username" 
-            placeholder="用户名" 
+          <el-input
+            v-model="loginForm.username"
+            placeholder="用户名"
             :prefix-icon="User"
             size="large"
           />
         </el-form-item>
         <el-form-item prop="password">
-          <el-input 
-            v-model="loginForm.password" 
-            type="password" 
-            placeholder="密码" 
+          <el-input
+            v-model="loginForm.password"
+            type="password"
+            placeholder="密码"
             :prefix-icon="Lock"
             size="large"
             show-password
@@ -48,8 +48,8 @@ const loginFormRef = ref<FormInstance>()
 const loading = ref(false)
 
 const loginForm = reactive({
-  username: 'admin',
-  password: 'password'
+  username: '',
+  password: ''
 })
 
 const rules = reactive<FormRules>({
@@ -63,23 +63,36 @@ const handleLogin = async () => {
     if (valid) {
       loading.value = true
       try {
-        const res = await request.post('/api/v1/auth/login', {
+        const res: any = await request.post('/api/v1/auth/login', {
           username: loginForm.username,
           password: loginForm.password
         })
-        
-        // Assuming the response returns { token: '...' } or similar structure
-        const token = res.token || res.data?.token || res.access_token || res.data?.access_token
-        if (token) {
-          localStorage.setItem('token', token)
+
+        if (res?.data?.token) {
+          localStorage.setItem('token', res.data.token)
+          localStorage.setItem('user', JSON.stringify({
+            id: res.data.userId,
+            username: res.data.username,
+            role: res.data.role
+          }))
+
+          const permissions = res.data.permissions || []
+          localStorage.setItem('permissions', JSON.stringify(permissions))
+
           ElMessage.success('登录成功')
           router.push('/dashboard')
         } else {
           ElMessage.error('登录失败：未获取到 token')
         }
-      } catch (error) {
-        // Error is handled by interceptor, but we still catch here to stop loading
+      } catch (error: any) {
         console.error('Login error:', error)
+        let errorMessage = '登录失败：未知错误'
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message
+        } else if (error.message) {
+          errorMessage = error.message
+        }
+        ElMessage.error(errorMessage)
       } finally {
         loading.value = false
       }

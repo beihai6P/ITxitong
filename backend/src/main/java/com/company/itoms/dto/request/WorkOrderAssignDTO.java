@@ -14,4 +14,37 @@ public class WorkOrderAssignDTO {
     private Long operatorId;
     
     private String remark;
+
+    public Long getWorkOrderId() {
+        return this.workOrderId;
+    }
+
+    public void setWorkOrderId(Long workOrderId) {
+        this.workOrderId = workOrderId;
+    }
+
+    public Long getAssigneeId() {
+        return this.assigneeId;
+    }
+
+    public void setAssigneeId(Long assigneeId) {
+        this.assigneeId = assigneeId;
+    }
+
+    public Long getOperatorId() {
+        return this.operatorId;
+    }
+
+    public void setOperatorId(Long operatorId) {
+        this.operatorId = operatorId;
+    }
+
+    public String getRemark() {
+        return this.remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark;
+    }
+
 }

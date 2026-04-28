@@ -12,13 +12,17 @@ public class DashboardMetricsDTO {
     private Long processingWorkOrders;
     private Long completedWorkOrders;
     private Long totalAssets;
-    
-    // {"date": "2023-10-01", "count": 10}
+    private Long totalUsers;
+    private Double completionRate;
+    private Long aiPredictedFaults;
+    private Double aiSuccessRate;
+
     private List<Map<String, Object>> workOrderTrend;
-    
-    // {"name": "HARDWARE", "value": 20}
     private List<Map<String, Object>> faultTypeDistribution;
-    
-    // {"name": "Healthy", "value": 50}
     private List<Map<String, Object>> assetHealthDistribution;
+    private List<Map<String, Object>> departmentWorkOrders;
+    private List<Map<String, Object>> assetTypeDistribution;
+    private List<Map<String, Object>> aiPredictionTrend;
+    private List<List<Integer>> faultTimeDistribution;
+    private List<Map<String, Object>> responseTimeRanking;
 }

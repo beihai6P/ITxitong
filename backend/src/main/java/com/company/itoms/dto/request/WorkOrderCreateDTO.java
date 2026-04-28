@@ -5,11 +5,9 @@ import lombok.Data;
 
 @Data
 public class WorkOrderCreateDTO {
-    @NotBlank(message = "Work order code cannot be blank")
     private String workOrderCode;
     
-    @NotBlank(message = "Fault type cannot be blank")
-    private String faultType;
+    private Integer faultType;
 
     @NotBlank(message = "Description cannot be blank")
     private String description;
@@ -21,4 +19,6 @@ public class WorkOrderCreateDTO {
     private Long departmentId;
 
     private Integer urgencyLevel;
+    
+    private String contactPhone;
 }

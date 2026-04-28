@@ -41,4 +41,7 @@ public class OperationLogController {
     public Result<Boolean> remove(@PathVariable Long id) {
         return Result.success(operationLogService.removeById(id));
     }
+
+
+
 }

@@ -24,4 +24,5 @@ public class DepartmentEntity {
 
     @TableLogic
     private Integer isDeleted;
+
 }

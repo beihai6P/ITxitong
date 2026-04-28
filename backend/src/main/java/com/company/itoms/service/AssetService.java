@@ -7,49 +7,44 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import com.company.itoms.dto.request.AssetBatchInventoryDTO;
 import java.util.List;
+import java.util.Map;
 
 public interface AssetService extends IService<AssetEntity> {
     Double calculateHealth(Long assetId);
-    
-    /**
-     * Generate QR code for asset
-     * @param assetId asset ID
-     * @return Base64 encoded image string or byte array
-     */
+
     byte[] generateAssetQRCode(Long assetId);
-    
-    /**
-     * Export assets to Excel
-     * @param response HTTP response
-     */
+
     void exportAssets(HttpServletResponse response);
-    
-    /**
-     * Import assets from Excel
-     * @param file uploaded Excel file
-     */
+
     void importAssets(MultipartFile file);
-    
-    /**
-     * Inventory check (compare expected assets vs scanned/actual assets)
-     * For simplicity, let's assume we pass an asset code to check its existence and status
-     * @param assetCode the code of the asset to check
-     * @return check result message
-     */
+
     String checkInventory(String assetCode);
 
-    /**
-     * Batch Inventory check
-     * @param dto the batch inventory DTO
-     * @return list of check result messages
-     */
     List<String> batchInventory(AssetBatchInventoryDTO dto);
 
-    /**
-     * Scan and resolve asset details and recent history
-     * @param assetCode the code from QR code or barcode
-     * @param operatorId the user ID who scans the asset
-     * @return AssetScanResultDTO containing asset details and recent history
-     */
     com.company.itoms.dto.response.AssetScanResultDTO scanAndResolve(String assetCode, Long operatorId);
+
+    void receiveAsset(Long assetId, Long operatorId, String operatorName, String targetDepartment, String targetUser);
+
+    void transferAsset(Long assetId, Long operatorId, String operatorName, String targetDepartment, String targetUser, String reason);
+
+    void returnAsset(Long assetId, Long operatorId, String operatorName, String reason);
+
+    void repairAsset(Long assetId, Long operatorId, String operatorName, String reason);
+
+    void scrapAsset(Long assetId, Long operatorId, String operatorName, String reason);
+
+    void updateAssetInfo(Long assetId, Long operatorId, String operatorName, Map<String, Object> changes);
+
+    Long createWorkOrderFromAsset(Long assetId, Long operatorId, String description, Integer urgencyLevel);
+
+    Map<String, Object> getAssetStatistics();
+
+    List<AssetEntity> getAssetsByStatus(String assetStatus);
+
+    List<AssetEntity> getAssetsByDepartment(String department);
+
+    List<AssetEntity> getWarrantyExpiringAssets(int days);
+
+    List<AssetEntity> getLongTimeIdleAssets(int months);
 }

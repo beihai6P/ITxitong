@@ -164,4 +164,7 @@ public class AliyunAiServiceImpl implements AiService {
         }
         return stats;
     }
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AliyunAiServiceImpl.class);
+
 }

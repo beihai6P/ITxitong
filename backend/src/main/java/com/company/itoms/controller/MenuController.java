@@ -18,10 +18,22 @@ public class MenuController {
 
     private final MenuService menuService;
 
+    @Operation(summary = "获取所有菜单(树形)")
+    @GetMapping("/tree")
+    public Result<List<MenuEntity>> tree() {
+        return Result.success(menuService.getMenuTree());
+    }
+
     @Operation(summary = "获取所有菜单")
     @GetMapping("/list")
     public Result<List<MenuEntity>> list() {
         return Result.success(menuService.list());
+    }
+
+    @Operation(summary = "获取所有启用的菜单")
+    @GetMapping("/enabled")
+    public Result<List<MenuEntity>> getEnabledMenus() {
+        return Result.success(menuService.getEnabledMenus());
     }
 
     @Operation(summary = "根据ID获取菜单")
@@ -46,5 +58,11 @@ public class MenuController {
     @DeleteMapping("/{id}")
     public Result<Boolean> remove(@PathVariable Long id) {
         return Result.success(menuService.removeById(id));
+    }
+
+    @Operation(summary = "获取用户的菜单权限")
+    @GetMapping("/user/{userId}")
+    public Result<List<MenuEntity>> getUserMenus(@PathVariable Long userId) {
+        return Result.success(menuService.getUserMenus(userId));
     }
 }
