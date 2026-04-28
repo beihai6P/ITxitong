@@ -18,6 +18,15 @@ public class KnowledgeBaseEntity {
     @TableField("fault_type")
     private String faultType;
 
+    @TableField("asset_category_id")
+    private Long assetCategoryId;
+
+    @TableField("weight")
+    private Integer weight = 100;
+
+    @TableField("review_status")
+    private Integer reviewStatus = 1; // 1-正常 0-待复核
+
     @TableLogic
     @TableField("is_deleted")
     private Integer isDeleted;

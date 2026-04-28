@@ -12,6 +12,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.company.itoms.mapper.AssetMapper;
+import com.company.itoms.entity.AssetEntity;
+import com.company.itoms.entity.SysDictEntity;
+import com.company.itoms.mapper.SysDictMapper;
 import java.util.List;
 
 @Slf4j
@@ -23,6 +27,12 @@ public class AiApiClientImpl implements AiApiClient {
 
     @Autowired
     private KnowledgeBaseMapper knowledgeBaseMapper;
+
+    @Autowired
+    private AssetMapper assetMapper;
+
+    @Autowired
+    private SysDictMapper sysDictMapper;
 
     @Override
     public AiRecommendationDTO call(WorkOrderCreateDTO request) throws AiApiException {
@@ -62,7 +72,35 @@ public class AiApiClientImpl implements AiApiClient {
             return createDefaultFallback();
         }
 
-        List<KnowledgeBaseEntity> knowledgeList = knowledgeBaseMapper.selectList(null);
+        Long categoryId = null;
+        if (request.getAssetId() != null) {
+            AssetEntity asset = assetMapper.selectById(request.getAssetId());
+            if (asset != null && asset.getAssetType() != null) {
+                LambdaQueryWrapper<SysDictEntity> dictQuery = new LambdaQueryWrapper<>();
+                dictQuery.eq(SysDictEntity::getDictCode, "ASSET_CATEGORY")
+                         .eq(SysDictEntity::getDictValue, asset.getAssetType());
+                SysDictEntity dict = sysDictMapper.selectOne(dictQuery);
+                if (dict != null) {
+                    categoryId = dict.getId();
+                }
+            }
+        }
+
+        LambdaQueryWrapper<KnowledgeBaseEntity> kbQuery = new LambdaQueryWrapper<>();
+        kbQuery.eq(KnowledgeBaseEntity::getReviewStatus, 1);
+        if (categoryId != null) {
+            kbQuery.eq(KnowledgeBaseEntity::getAssetCategoryId, categoryId);
+        }
+        
+        List<KnowledgeBaseEntity> knowledgeList = knowledgeBaseMapper.selectList(kbQuery);
+        
+        // 降级：如果带分类查不到，查全局
+        if (knowledgeList.isEmpty() && categoryId != null) {
+            LambdaQueryWrapper<KnowledgeBaseEntity> fallbackQuery = new LambdaQueryWrapper<>();
+            fallbackQuery.eq(KnowledgeBaseEntity::getReviewStatus, 1);
+            knowledgeList = knowledgeBaseMapper.selectList(fallbackQuery);
+        }
+
         if (knowledgeList.isEmpty()) {
             return createDefaultFallback();
         }
@@ -119,6 +157,11 @@ public class AiApiClientImpl implements AiApiClient {
             if (kb.getFaultType().equals(faultTypeStr)) {
                 score *= 1.2;
             }
+        }
+
+        // 使用权重作为乘数因子，默认100为基准
+        if (kb.getWeight() != null && kb.getWeight() > 0) {
+            score *= (kb.getWeight() / 100.0);
         }
 
         return Math.min(score, 1.0);

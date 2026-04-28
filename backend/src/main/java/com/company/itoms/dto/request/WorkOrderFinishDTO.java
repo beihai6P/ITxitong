@@ -12,6 +12,8 @@ public class WorkOrderFinishDTO {
     
     private String remark;
 
+    private java.util.List<ConsumableUsageDTO> consumables;
+
     public Long getWorkOrderId() {
         return this.workOrderId;
     }

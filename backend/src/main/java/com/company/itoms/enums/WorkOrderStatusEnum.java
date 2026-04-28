@@ -8,7 +8,8 @@ public enum WorkOrderStatusEnum {
     COMPLETED(5, "已完成", "工单已完成"),
     REJECTED(6, "已驳回", "工单被驳回"),
     SUSPENDED(7, "已暂停", "工单暂停处理"),
-    CLOSED(8, "已关闭", "工单已关闭");
+    CLOSED(8, "已关闭", "工单已关闭"),
+    PENDING_PARTS(9, "缺件挂起", "等待备件耗材");
 
     private final int code;
     private final String name;
@@ -48,7 +49,7 @@ public enum WorkOrderStatusEnum {
             case DISPATCHED:
                 return target == PROCESSING || target == PENDING || target == CLOSED;
             case PROCESSING:
-                return target == PENDING_ACCEPTANCE || target == SUSPENDED || target == REJECTED;
+                return target == PENDING_ACCEPTANCE || target == SUSPENDED || target == REJECTED || target == PENDING_PARTS;
             case PENDING_ACCEPTANCE:
                 return target == COMPLETED || target == REJECTED;
             case COMPLETED:
@@ -56,6 +57,8 @@ public enum WorkOrderStatusEnum {
             case REJECTED:
                 return target == PENDING;
             case SUSPENDED:
+                return target == PROCESSING || target == CLOSED;
+            case PENDING_PARTS:
                 return target == PROCESSING || target == CLOSED;
             case CLOSED:
                 return false;

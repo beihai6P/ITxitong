@@ -20,4 +20,10 @@ public class DashboardController {
         DashboardMetricsDTO metrics = dashboardService.getMetrics();
         return Result.success(metrics);
     }
+
+    @GetMapping("/sync")
+    public Result<Boolean> syncMetrics() {
+        dashboardService.syncMetrics();
+        return Result.success(true);
+    }
 }

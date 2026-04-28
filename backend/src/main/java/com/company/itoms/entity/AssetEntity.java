@@ -40,6 +40,15 @@ public class AssetEntity {
     @TableField("user")
     private String userName;
 
+    @TableField("user_id")
+    private Long userId;
+
+    @TableField("department_id")
+    private Long departmentId;
+
+    @TableField("health_status")
+    private String healthStatus;
+
     @TableField("asset_type")
     private String assetType;
 
@@ -178,6 +187,15 @@ public class AssetEntity {
     public void setDepartment(String department) {
         this.department = department;
     }
+
+    public Long getUserId() { return this.userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
+    
+    public Long getDepartmentId() { return this.departmentId; }
+    public void setDepartmentId(Long departmentId) { this.departmentId = departmentId; }
+
+    public String getHealthStatus() { return this.healthStatus; }
+    public void setHealthStatus(String healthStatus) { this.healthStatus = healthStatus; }
 
     public String getUserName() {
         return this.userName;

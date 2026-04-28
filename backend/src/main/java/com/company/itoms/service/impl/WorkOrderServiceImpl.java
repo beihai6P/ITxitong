@@ -30,6 +30,7 @@ import com.company.itoms.mapper.WorkOrderFlowLogMapper;
 import com.company.itoms.mapper.WorkOrderDispatchLogMapper;
 import com.company.itoms.mapper.EngineerWorkStatMapper;
 import com.company.itoms.mapper.WorkOrderStatisticsMapper;
+import com.company.itoms.service.ConsumableStockService;
 import com.company.itoms.service.AiApiClient;
 import com.company.itoms.service.AssetService;
 import com.company.itoms.service.KnowledgeBaseService;
@@ -41,7 +42,9 @@ import com.company.itoms.mapper.AssetMapper;
 import com.company.itoms.mapper.UserMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
+import com.company.itoms.event.WorkOrderEvaluateEvent;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -56,6 +59,12 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class WorkOrderServiceImpl extends ServiceImpl<WorkOrderMapper, WorkOrderEntity> implements WorkOrderService {
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    private ConsumableStockService consumableStockService;
 
     @Autowired
     private WorkOrderMapper workOrderMapper;
@@ -459,19 +468,31 @@ public class WorkOrderServiceImpl extends ServiceImpl<WorkOrderMapper, WorkOrder
         if (entity == null) {
             throw new IllegalArgumentException("工单不存在");
         }
-        
+
         WorkOrderStatusEnum currentStatus = WorkOrderStatusEnum.fromCode(entity.getStatus());
         WorkOrderStatusEnum targetStatus = WorkOrderStatusEnum.PENDING_ACCEPTANCE;
-        
+
         if (!currentStatus.canTransitionTo(targetStatus)) {
             throw new IllegalStateException("工单状态[" + currentStatus.name() + "]不允许完成");
         }
-        
+
+        try {
+            consumableStockService.deductStock(dto.getConsumables(), dto.getWorkOrderId());
+        } catch (IllegalStateException e) {
+            if (e.getMessage().contains("库存不足")) {
+                entity.setStatus(WorkOrderStatusEnum.PENDING_PARTS.code());
+                this.updateById(entity);
+                recordFlowLog(entity.getId(), dto.getOperatorId(), "SUSPEND_PARTS", entity.getStatus(), entity.getStatus(), "缺件挂起：" + e.getMessage());
+                return;
+            }
+            throw e;
+        }
+
         Integer previousStatus = entity.getStatus();
-        
+
         entity.setStatus(targetStatus.code());
         this.updateById(entity);
-        
+
         recordFlowLog(entity.getId(), dto.getOperatorId(), "FINISH", previousStatus, entity.getStatus(), dto.getRemark());
     }
 
@@ -497,7 +518,9 @@ public class WorkOrderServiceImpl extends ServiceImpl<WorkOrderMapper, WorkOrder
         this.updateById(entity);
         
         recordFlowLog(entity.getId(), dto.getOperatorId(), "EVALUATE", previousStatus, entity.getStatus(), dto.getEvaluateRemark());
-        
+
+        eventPublisher.publishEvent(new WorkOrderEvaluateEvent(this, entity));
+
         if (entity.getAssetId() != null) {
             restoreAssetStatusAfterRepair(entity.getAssetId());
         }

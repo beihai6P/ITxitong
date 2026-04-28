@@ -17,6 +17,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import org.springframework.data.redis.core.RedisTemplate;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -35,8 +38,42 @@ public class DashboardServiceImpl implements DashboardService {
     @Autowired
     private DepartmentMapper departmentMapper;
 
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private static final String DASHBOARD_CACHE_KEY = "itoms:dashboard:metrics";
+
     @Override
     public DashboardMetricsDTO getMetrics() {
+        try {
+            String cached = redisTemplate.opsForValue().get(DASHBOARD_CACHE_KEY);
+            if (cached != null) {
+                return objectMapper.readValue(cached, DashboardMetricsDTO.class);
+            }
+        } catch (Exception e) {
+            log.error("读取大屏 Redis 缓存失败，降级查询底层库：", e);
+        }
+        
+        // 降级查询
+        return calculateMetrics();
+    }
+
+    @Override
+    public void syncMetrics() {
+        try {
+            DashboardMetricsDTO metrics = calculateMetrics();
+            String json = objectMapper.writeValueAsString(metrics);
+            redisTemplate.opsForValue().set(DASHBOARD_CACHE_KEY, json, 1, TimeUnit.HOURS);
+            log.info("大屏指标数据重算并同步至 Redis 成功");
+        } catch (Exception e) {
+            log.error("大屏指标数据同步失败：", e);
+        }
+    }
+
+    private DashboardMetricsDTO calculateMetrics() {
         DashboardMetricsDTO metrics = new DashboardMetricsDTO();
 
         try {
@@ -44,7 +81,9 @@ public class DashboardServiceImpl implements DashboardService {
             LocalDateTime sevenDaysAgo = now.minusDays(7);
 
             // 1. Work Order basic stats - query all and count in memory
-            List<WorkOrderEntity> allWorkOrders = safeQuery(() -> workOrderMapper.selectList(new QueryWrapper<>()), Collections.emptyList());
+            QueryWrapper<WorkOrderEntity> woQuery = new QueryWrapper<>();
+            woQuery.eq("is_deleted", 0);
+            List<WorkOrderEntity> allWorkOrders = safeQuery(() -> workOrderMapper.selectList(woQuery), Collections.emptyList());
             List<WorkOrderEntity> pendingOrders = filterByStatus(allWorkOrders, 1);
             List<WorkOrderEntity> processingOrders = filterByStatusIn(allWorkOrders, Arrays.asList(2, 3));
             List<WorkOrderEntity> completedOrders = filterByStatusIn(allWorkOrders, Arrays.asList(4, 5));
@@ -55,11 +94,15 @@ public class DashboardServiceImpl implements DashboardService {
             metrics.setCompletedWorkOrders((long) completedOrders.size());
 
             // 2. Asset stats
-            List<AssetEntity> allAssets = safeQuery(() -> assetMapper.selectList(new QueryWrapper<>()), Collections.emptyList());
+            QueryWrapper<AssetEntity> assetQuery = new QueryWrapper<>();
+            assetQuery.eq("is_deleted", 0);
+            List<AssetEntity> allAssets = safeQuery(() -> assetMapper.selectList(assetQuery), Collections.emptyList());
             metrics.setTotalAssets((long) allAssets.size());
 
             // 3. User stats
-            Long totalUsers = safeQuery(() -> userMapper.selectCount(new QueryWrapper<>()), 0L);
+            QueryWrapper<UserEntity> userQuery = new QueryWrapper<>();
+            userQuery.eq("is_deleted", 0);
+            Long totalUsers = safeQuery(() -> userMapper.selectCount(userQuery), 0L);
             metrics.setTotalUsers(totalUsers);
 
             // 4. Completion rate
